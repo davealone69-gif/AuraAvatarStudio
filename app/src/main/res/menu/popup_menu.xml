@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Popup menu for creation options -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/popup_photo" android:title="From Photo" />
+    <item android:id="@+id/popup_video" android:title="From Video" />
+    <item android:id="@+id/popup_ai" android:title="AI Generate" />
+    <item android:id="@+id/popup_swarm" android:title="Swarm Create" />
+</menu>

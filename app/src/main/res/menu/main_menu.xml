@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aura Avatar Studio - Main Options Menu -->
+<!-- Easy to modify later -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_new_avatar"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="New Avatar"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_swarm"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Swarm Builder"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_gallery"
+        android:title="Gallery" />
+
+    <item
+        android:id="@+id/action_video"
+        android:title="Video Tools" />
+
+    <item
+        android:id="@+id/action_about"
+        android:title="About / Credits" />
+</menu>
