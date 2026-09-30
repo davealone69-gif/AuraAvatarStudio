@@ -38,12 +38,16 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Setup Gradle
+        if: ${{ hashFiles('build.gradle*') != '' }}
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
       - name: Gradle audit and build
         if: ${{ hashFiles('build.gradle*') != '' }}
         shell: bash
         run: |
           set -o pipefail
-          gradle/actions/setup-gradle@v4
           gradle lint test assembleDebug --stacktrace --console=plain
       - name: Node audit and test
         if: ${{ hashFiles('package.json') != '' }}
