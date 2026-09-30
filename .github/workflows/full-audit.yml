@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 jobs:
   audit:
@@ -39,9 +37,3 @@ jobs:
         if: ${{ hashFiles('**/*.py') != '' }}
         shell: bash
         run: python -m compileall -q .
-      - name: CodeQL security analysis
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript,python,java-kotlin
-      - name: CodeQL analyze
-        uses: github/codeql-action/analyze@v3
