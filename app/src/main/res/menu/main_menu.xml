@@ -14,7 +14,7 @@
         android:id="@+id/action_swarm"
         android:icon="@android:drawable/ic_menu_manage"
         android:title="Swarm Builder"
-        app:showAsAction="ifRoom" />
+        android:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_gallery"
