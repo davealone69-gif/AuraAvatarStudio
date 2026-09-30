@@ -8,7 +8,7 @@
         android:id="@+id/action_new_avatar"
         android:icon="@android:drawable/ic_menu_add"
         android:title="New Avatar"
-        app:showAsAction="ifRoom" />
+        android:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_swarm"
