@@ -1,4 +1,3 @@
-// PERMANENT WORKING FILE — copy from apk-build-kit
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -12,8 +11,8 @@ android {
         applicationId = "com.aura.avatarstudio"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -30,6 +29,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -60,17 +63,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.core.ktx)
 
-    implementation(libs.okhttp)
-    implementation(libs.logging.interceptor)
-    implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
-    implementation(libs.moshi.kotlin)
-
-    implementation(libs.coil.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
 
-    // Media3 Transformer — trim, scale, rotate, overlays, filters, concat, transcode, export
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
     implementation(libs.media3.common)

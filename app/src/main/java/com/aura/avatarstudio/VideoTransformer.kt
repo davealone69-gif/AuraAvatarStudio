@@ -26,7 +26,8 @@ object VideoTransformer {
         val scaleX: Float = 1f,
         val scaleY: Float = 1f,
         val rotationDegrees: Float = 0f,
-        val videoMime: String = MimeTypes.VIDEO_H265,
+        // H.264 is widely supported for hardware encode; H.265 often fails on mid-range devices
+        val videoMime: String = MimeTypes.VIDEO_H264,
         val audioMime: String = MimeTypes.AUDIO_AAC,
     )
 
@@ -35,13 +36,18 @@ object VideoTransformer {
         inputUri: Uri,
         options: Options = Options(),
     ): File = suspendCancellableCoroutine { cont ->
-        val outFile = File(context.cacheDir, "export_${System.currentTimeMillis()}.mp4")
+        val dir = File(context.filesDir, "exports").also { if (!it.exists()) it.mkdirs() }
+        val outFile = File(dir, "export_${System.currentTimeMillis()}.mp4")
 
         val mediaItemBuilder = MediaItem.Builder().setUri(inputUri)
         if (options.trimStartMs > 0 || options.trimEndMs != null) {
             val clipping = MediaItem.ClippingConfiguration.Builder()
-                .setStartPositionMs(options.trimStartMs)
-                .apply { options.trimEndMs?.let { setEndPositionMs(it) } }
+                .setStartPositionMs(options.trimStartMs.coerceAtLeast(0L))
+                .apply {
+                    options.trimEndMs?.let { end ->
+                        if (end > options.trimStartMs) setEndPositionMs(end)
+                    }
+                }
                 .build()
             mediaItemBuilder.setClippingConfiguration(clipping)
         }
@@ -56,16 +62,25 @@ object VideoTransformer {
         }
 
         val edited = EditedMediaItem.Builder(mediaItem)
-            .setEffects(Effects(/* audioProcessors */ emptyList(), videoEffects))
+            .setEffects(Effects(emptyList(), videoEffects))
             .build()
 
-        val transformer = Transformer.Builder(context)
+        val transformer = Transformer.Builder(context.applicationContext)
             .setVideoMimeType(options.videoMime)
             .setAudioMimeType(options.audioMime)
             .addListener(object : Transformer.Listener {
                 override fun onCompleted(composition: Composition, exportResult: ExportResult) {
-                    if (cont.isActive) cont.resume(outFile)
+                    if (cont.isActive) {
+                        if (outFile.exists() && outFile.length() > 0L) {
+                            cont.resume(outFile)
+                        } else {
+                            cont.resumeWithException(
+                                IllegalStateException("Export finished but output file is missing or empty")
+                            )
+                        }
+                    }
                 }
+
                 override fun onError(
                     composition: Composition,
                     exportResult: ExportResult,
@@ -76,7 +91,17 @@ object VideoTransformer {
             })
             .build()
 
-        cont.invokeOnCancellation { transformer.cancel() }
-        transformer.start(edited, outFile.absolutePath)
+        cont.invokeOnCancellation {
+            try {
+                transformer.cancel()
+            } catch (_: Exception) {
+            }
+        }
+
+        try {
+            transformer.start(edited, outFile.absolutePath)
+        } catch (e: Exception) {
+            if (cont.isActive) cont.resumeWithException(e)
+        }
     }
 }
