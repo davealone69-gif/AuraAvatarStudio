@@ -22,7 +22,7 @@ jobs:
         if: ${{ hashFiles('build.gradle*') != '' }}
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: gradle
       - name: Locate Android SDK
