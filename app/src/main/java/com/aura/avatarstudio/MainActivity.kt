@@ -1,10 +1,15 @@
 package com.aura.avatarstudio
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.media3.common.util.UnstableApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -67,7 +72,7 @@ class MainActivity : ComponentActivity() {
     private fun showAbout() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Aura Avatar Studio")
-            .setMessage("Version 1.0.0\n\nAvatar design studio with swarm builder\nHD Avatars • Videos • Gallery\n\nBuilt by REDRUM Studios")
+            .setMessage("Version 1.0.0\n\nAvatar design studio with swarm builder\nHD Avatars • Videos • Gallery\nMedia3 Transformer\n\nBuilt by REDRUM Studios")
             .setPositiveButton("OK", null).show()
     }
 }
@@ -131,13 +136,11 @@ fun AuraApp(
             agents = agents,
             onToggle = { id -> agents = agents.map { if (it.id == id) it.copy(active = !it.active) else it } },
             onResult = { avatarName, output, hd ->
-                // Mark avatar HD if requested
                 if (hd) {
                     avatars = avatars.map {
                         if (it.name == avatarName) it.copy(hd = true, notes = "HD ready") else it
                     }
                 }
-                // Push result into gallery
                 val type = if (output == SwarmOutput.Video) "Video" else "Image"
                 val title = if (output == SwarmOutput.Video) "$avatarName HD video" else "$avatarName HD portrait"
                 gallery = listOf(
@@ -302,7 +305,6 @@ fun SwarmScreen(
             Text("Pick avatar → agents build HD or Video", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
 
-            // Avatar picker
             Text("Target avatar", fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             if (avatars.isEmpty()) {
@@ -438,7 +440,9 @@ fun GalleryScreen(
                             Spacer(Modifier.height(8.dp))
                             Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                             Text(item.type + if (item.fromAvatar.isNotBlank()) " • ${item.fromAvatar}" else "", style = MaterialTheme.typography.bodySmall)
-                            TextButton(onClick = { onDelete(item.id) }) { Text("Remove") }
+                            IconButton(onClick = { onDelete(item.id) }, modifier = Modifier.align(Alignment.End)) {
+                                Icon(Icons.Default.Delete, "Delete")
+                            }
                         }
                     }
                 }
@@ -448,22 +452,33 @@ fun GalleryScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@UnstableApi
 @Composable
 fun VideoToolsScreen(
     avatars: List<Avatar>,
     onGenerated: (String) -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var selected by remember { mutableStateOf(avatars.firstOrNull()?.name ?: "") }
-    var duration by remember { mutableStateOf("4") }
-    var fps by remember { mutableStateOf("24") }
+    var videoUri by remember { mutableStateOf<Uri?>(null) }
+    var trimStartSec by remember { mutableStateOf("0") }
+    var trimEndSec by remember { mutableStateOf("") }
+    var scale by remember { mutableStateOf("1.0") }
+    var rotation by remember { mutableStateOf("0") }
     var generating by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        videoUri = uri
+        status = if (uri != null) "Video selected" else ""
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Video Tools") },
+                title = { Text("Video Tools (Media3)") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
                 }
@@ -472,10 +487,17 @@ fun VideoToolsScreen(
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Turn HD avatars into short clips", style = MaterialTheme.typography.bodyLarge)
-            Text("Avatar", fontWeight = FontWeight.SemiBold)
+            Text("Media3 Transformer: trim • scale • rotate • export", style = MaterialTheme.typography.bodyMedium)
+
+            Button(onClick = { picker.launch("video/*") }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.FolderOpen, null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (videoUri != null) "Change video" else "Pick video")
+            }
+
+            Text("Link avatar (gallery tag)", fontWeight = FontWeight.SemiBold)
             avatars.forEach { a ->
                 FilterChip(
                     selected = selected == a.name,
@@ -483,40 +505,81 @@ fun VideoToolsScreen(
                     label = { Text(if (a.hd) "${a.name} (HD)" else a.name) }
                 )
             }
+
             OutlinedTextField(
-                value = duration,
-                onValueChange = { duration = it.filter { c -> c.isDigit() } },
-                label = { Text("Duration (seconds)") },
+                value = trimStartSec,
+                onValueChange = { trimStartSec = it.filter { c -> c.isDigit() || c == '.' } },
+                label = { Text("Trim start (sec)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
-                value = fps,
-                onValueChange = { fps = it.filter { c -> c.isDigit() } },
-                label = { Text("FPS") },
+                value = trimEndSec,
+                onValueChange = { trimEndSec = it.filter { c -> c.isDigit() || c == '.' } },
+                label = { Text("Trim end (sec, empty = full)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            OutlinedTextField(
+                value = scale,
+                onValueChange = { scale = it },
+                label = { Text("Scale (e.g. 0.5)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = rotation,
+                onValueChange = { rotation = it.filter { c -> c.isDigit() || c == '.' || c == '-' } },
+                label = { Text("Rotation degrees") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             if (generating) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                Text("Rendering ${duration}s @ ${fps}fps…")
             }
+            if (status.isNotBlank()) {
+                Text(status, style = MaterialTheme.typography.bodySmall)
+            }
+
             Button(
                 onClick = {
-                    if (selected.isBlank() || generating) return@Button
+                    val uri = videoUri ?: return@Button
+                    if (generating) return@Button
                     generating = true
+                    status = "Exporting…"
                     scope.launch {
-                        delay(1500)
-                        onGenerated(selected)
-                        generating = false
+                        try {
+                            val startMs = ((trimStartSec.toFloatOrNull() ?: 0f) * 1000).toLong()
+                            val endMs = trimEndSec.toFloatOrNull()?.let { (it * 1000).toLong() }
+                            val s = scale.toFloatOrNull() ?: 1f
+                            val rot = rotation.toFloatOrNull() ?: 0f
+                            val out = VideoTransformer.export(
+                                context = context,
+                                inputUri = uri,
+                                options = VideoTransformer.Options(
+                                    trimStartMs = startMs,
+                                    trimEndMs = endMs,
+                                    scaleX = s,
+                                    scaleY = s,
+                                    rotationDegrees = rot,
+                                )
+                            )
+                            status = "Done: ${out.name}"
+                            if (selected.isNotBlank()) onGenerated(selected)
+                        } catch (e: Exception) {
+                            status = "Error: ${e.message}"
+                        } finally {
+                            generating = false
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = selected.isNotBlank() && !generating
+                enabled = videoUri != null && !generating
             ) {
                 Icon(Icons.Default.Videocam, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Generate Clip")
+                Text("Export with Media3")
             }
         }
     }
