@@ -1,6 +1,6 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.2.10"
+kotlin = "2.0.21"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -19,7 +19,7 @@ converterMoshi = "2.11.0"
 okhttp = "4.12.0"
 loggingInterceptor = "4.12.0"
 moshiKotlin = "1.15.1"
-media3 = "1.11.1"
+media3 = "1.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,5 +53,4 @@ media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", versi
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
