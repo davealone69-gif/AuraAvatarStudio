@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, UnstableApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuraApp(
     onRegisterNav: ((Screen) -> Unit) -> Unit,
