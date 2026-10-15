@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuraApp(
