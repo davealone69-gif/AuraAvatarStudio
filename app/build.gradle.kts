@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -34,6 +35,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
 
     buildFeatures {
         compose = true
